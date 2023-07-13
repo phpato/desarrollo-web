@@ -50,3 +50,11 @@ este comando solo lo puede correr si tiene configurado su archivo .env
 ```bash
 php artisan serve
 ```
+debe tener entonces 2 consolas para visualizar correctamente la aplicacion 
+```bash
+php artisan serve
+```
+y
+```bash
+npm run dev
+```
