@@ -16,12 +16,10 @@ import { createApp } from 'vue';
 const app = createApp({});
 
 import HomeComponent from './components/HomeComponent.vue';
-import UserComponent from './components/UserComponent.vue';
 import MyPostComponent from './components/MyPostComponent.vue';
 import PostComponent from './components/PostComponent.vue';
 
 app.component('home-component', HomeComponent);
-app.component('user-component', UserComponent);
 app.component('my-post-component', MyPostComponent);
 app.component('post-component', PostComponent);
 
