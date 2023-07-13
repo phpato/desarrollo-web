@@ -74,6 +74,7 @@
                                     </div>
                                     <div class="col-12">
                                         <div class="float-start">
+                                            <p> Identificador: {{ item.id }}</p>
                                             <p> Fecha: {{ parseDate(item.created_at) }}</p>
                                         </div>
                                         <div class="float-end">
