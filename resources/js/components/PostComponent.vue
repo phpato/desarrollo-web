@@ -13,22 +13,30 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12" v-if="newPost || edit">
+            <div class="col-12" v-if="newPost || edit" ref="targetEdit">
                 <div class="card">
                     <div class="card-body bg-default">
                         <h2>Nuevo post</h2>
                         <div class="row">
+                            <div class="col-12" v-if="errors.length>0">
+                                <div class="alert alert-danger" role="alert">
+                                    <strong>Errores:</strong>
+                                    <ul>
+                                        <li v-for="error in errors" :key="error">{{ error }}</li>
+                                    </ul>
+                                </div>
+                            </div>
                             <div class="col-12">
                                 <div class="mb-3">
-                                    <label class="form-label">Estado:</label>
-                                    <select  class="form-control" required v-model="post.state_id">
+                                    <label for="select-state" class="form-label">Estado:</label>
+                                    <select id="select-state" class="form-control" required v-model="post.state_id">
                                         <option value="">Seleccione una opción</option>
                                         <option v-for="state in states" :key="state.id" :value="state.id">{{ state.name }}</option>
                                     </select>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Post:</label>
-                                    <textarea class="form-control" type="text" rows="5" v-model="post.post"></textarea>
+                                    <label for="post-user" class="form-label">Post:</label>
+                                    <textarea id="post-user" class="form-control" type="text" rows="5" v-model="post.post"></textarea>
                                 </div>
                             </div>
                             <div class=" ol-12">
@@ -94,8 +102,9 @@
         props:['currentUser', 'states'],
         data(){
             return {
+                ref: null,
                 edit: false,
-                error: null,
+                errors: [],
                 newPost: false,
                 posts: [],
                 post:{
@@ -109,6 +118,20 @@
             await this.getPosts()
         },
         methods:{
+            validateForm(){
+                let errors = []
+                if( !this.post.post || this.post.post == "" ){
+                    errors.push("Debe ingresar un post")
+                }
+                if( !this.post.state_id || this.post.state_id == "" ){
+                    errors.push("Debe ingresar un estado del post")
+                }
+                if( errors.length > 0 ){
+                    this.errors = errors;
+                    return false
+                }
+                return true;
+            },
             parseDate(date){
                 const newDate = new Date(date)
                 return newDate.toLocaleString()
@@ -121,6 +144,7 @@
                 this.newPost = false
                 this.edit = true
                 this.post = post
+                this.$refs.targetEdit?.scrollIntoView({ behavior: 'smooth' });
             },
             async getPosts(){
                 await axios
@@ -130,12 +154,15 @@
                     })
             },
             async addPost(){
-                const post = { post: this.post.post, state_id: this.post.state_id }
-                const response = await this.postPost(post)
-                if( response && response.data){
-                    this.notify("Exito!", "success", "Post creado correctamente")
-                    this.cleanForm()
-                    await this.getPosts()
+                const validatedForm = this.validateForm()
+                if( validatedForm ){
+                    const post = { post: this.post.post, state_id: this.post.state_id }
+                    const response = await this.postPost(post)
+                    if( response && response.data){
+                        this.notify("Exito!", "success", "Post creado correctamente")
+                        this.cleanForm()
+                        await this.getPosts()
+                    }
                 }
             },
             async editPost(){
@@ -196,6 +223,7 @@
                 })
             },
             cleanForm(){
+                this.errors = []
                 this.edit = false
                 this.newPost = false
                 this.post = {
