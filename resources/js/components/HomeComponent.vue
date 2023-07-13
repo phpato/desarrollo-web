@@ -19,6 +19,14 @@
                     <div class="card-body bg-default">
                         <h2>Nuevo usuario</h2>
                         <div class="row">
+                            <div class="col-12" v-if="errors.length>0">
+                                <div class="alert alert-danger" role="alert">
+                                    <strong>Errores:</strong>
+                                    <ul>
+                                        <li v-for="error in errors" :key="error">{{ error }}</li>
+                                    </ul>
+                                </div>
+                            </div>
                             <div class="mb-3 col-6">
                                 <label class="form-label">Nombre:</label>
                                 <input class="form-control" type="text" v-model="user.name">
@@ -86,8 +94,8 @@
         props:['currentUser'],
         data(){
             return {
+                errors: [],
                 edit: false,
-                error: null,
                 newUser: false,
                 users: [],
                 user:{
@@ -101,6 +109,20 @@
             await this.getUsers()
         },
         methods:{
+            validateForm(){
+                let errors = []
+                if( !this.user.name || this.users.name == "" ){
+                    errors.push("Debe ingresar un nombre")
+                }
+                if( !this.user.email || this.user.email == "" ){
+                    errors.push("Debe ingresar un email")
+                }
+                if( errors.length > 0 ){
+                    this.errors = errors;
+                    return false
+                }
+                return true;
+            },
             createUser(){
                 this.newUser = true
                 this.edit = false
@@ -118,21 +140,27 @@
                     })
             },
             async addUser(){
-                const user = { name: this.user.name, email: this.user.email }
-                const response = await this.postUser(user)
-                if( response && response.data){
-                    this.notify("Exito!", "success", "Usuario creado correctamente")
-                    this.cleanForm()
-                    await this.getUsers()
+                const validateForm = this.validateForm()
+                if( validateForm ){
+                    const user = { name: this.user.name, email: this.user.email }
+                    const response = await this.postUser(user)
+                    if( response && response.data){
+                        this.notify("Exito!", "success", "Usuario creado correctamente")
+                        this.cleanForm()
+                        await this.getUsers()
+                    }
                 }
             },
             async editUser(){
-                const user = { id: this.user.id, name: this.user.name }
-                const response = await this.putUser(user)
-                if( response && response.data){
-                    this.notify("Exito!", "success", "Usuario actualizado correctamente")
-                    this.cleanForm()
-                    await this.getUsers()
+                const validateForm = this.validateForm()
+                if( validateForm ){
+                    const user = { id: this.user.id, name: this.user.name, email: this.user.email }
+                    const response = await this.putUser(user)
+                    if( response && response.data){
+                        this.notify("Exito!", "success", "Usuario actualizado correctamente")
+                        this.cleanForm()
+                        await this.getUsers()
+                    }  
                 }
             },
             async postUser(user){
@@ -141,8 +169,12 @@
                         return response
                     })
                     .catch(error => {
-                        this.notify("Ocurrio un error", "error", error.message)
-                        console.error("There was an error in creation user: !", error)
+                        //parseo de errores custom de validator
+                        if( error.response && error.response.data.errors ){
+                            this.errors =  Object.values(error.response.data.errors).map(e => e[0])
+                        }
+                        this.notify("Ocurrio un error actualizando usuario", "error", error.message)
+                        console.error("There was an error in update user: !", error)
                     });
             },
             async putUser(user){
@@ -151,8 +183,13 @@
                         return response
                     })
                     .catch(error => {
+                        //parseo de errores custom de validator
+                        if( error.response && error.response.data.errors ){
+                            this.errors =  Object.values(error.response.data.errors).map(e => e[0])
+                        }
                         this.notify("Ocurrio un error actualizando usuario", "error", error.message)
-                        console.error("There was an error in creation user: !", error)
+                        console.error("There was an error in update user: !", error)
+
                     });
             },
             async deleteUser(user){
@@ -184,6 +221,7 @@
                 })
             },
             cleanForm(){
+                this.errors = []
                 this.edit = false
                 this.newUser = false
                 this.user = {
